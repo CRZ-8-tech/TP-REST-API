@@ -47,7 +47,7 @@ db.run(createTableQuery, (err) => {
   }
 });
 
-// Initialiser la base de données avec les données de test
+// Initialiser la base de données avec les données de test EXACTES de la photo
 function initializeDatabase() {
   const countQuery = 'SELECT COUNT(*) as count FROM cars';
   
@@ -58,41 +58,41 @@ function initializeDatabase() {
     }
     
     if (row.count === 0) {
-      console.log('📦 La base de données est vide, insertion des données de test...');
+      console.log('📦 La base de données est vide, insertion des données de la photo...');
       const testCars = [
         {
-          brand: 'Ferrari',
-          model: '250 GTO',
-          year: 1962,
-          color: 'Rouge',
+          brand: 'McLaren',
+          model: 'p1',
+          year: 2026,
+          color: 'Noir',
           price: 45000000,
-          mileage: 12000,
-          description: 'Voiture de collection exceptionnelle',
-          imageUrl: 'https://cdn.ferrari.com/cms/network/media/img/resize/5d055246107b060e8f527a59',
+          mileage: 10,
+          description: 'Pas de description',
+          imageUrl: 'https://cdn.motor1.com/images/mgl/o7709/s1/mclaren-p1.jpg',
+          highlights: 'Hypercar'
+        },
+        {
+          brand: 'Citroen',
+          model: 'c3',
+          year: 2015,
+          color: 'Grise',
+          price: 4500,
+          mileage: 250000,
+          description: 'La voiture du peuple. Attention, elle en a sous le capot',
+          imageUrl: 'https://cdn.wheel-size.com/automobile/body/citroen-c3-2013-2015-1627380267.7414687.jpg',
           highlights: 'Légendaire, moteur V12'
         },
         {
-          brand: 'Porsche',
-          model: '911 Carrera RS',
-          year: 1973,
+          brand: 'Renault',
+          model: 'Clio 2',
+          year: 2003,
           color: 'Blanc',
-          price: 850000,
-          mileage: 45000,
-          description: 'Légendaire modèle RS',
-          imageUrl: 'https://cdn.rmsothebys.com/d/6/6/9/2/5/d669253bbebf27ce2a60ef8db2c46600610471d3.webp',
+          price: 800,
+          mileage: 350000,
+          description: 'Une carcasse. Ne jouez pas au malin avec le conducteur',
+          imageUrl: 'https://img.leboncoin.fr/api/v1/lbcpb1/images/64/9f/e0/649fe0857f41fedcc79c37ba04ba109e0eb2d482.jpg?rule=classified-1200x800-webp',
           highlights: 'Aileron emblématique'
         },
-        {
-          brand: 'Jaguar',
-          model: 'E-Type',
-          year: 1961,
-          color: 'Bleu',
-          price: 320000,
-          mileage: 78000,
-          description: 'Icône du design automobile',
-          imageUrl: 'https://pendine.com/wp-content/uploads/2018/10/DSC_3137-WEB-1500x1001.jpg',
-          highlights: 'Design révolutionnaire'
-        }
       ];
       
       const insertQuery = `
@@ -108,7 +108,7 @@ function initializeDatabase() {
         });
       });
       
-      console.log('✅ Données de test insérées');
+      console.log('✅ Données de test insérées (McLaren, Citroen, Renault)');
     } else {
       console.log(`✅ Base de données contient ${row.count} voiture(s)`);
     }
@@ -117,10 +117,8 @@ function initializeDatabase() {
 
 // ==================== ROUTES API ====================
 
-// GET /api/cars - Récupérer toutes les voitures
 app.get('/api/cars', (req, res) => {
   const query = 'SELECT * FROM cars ORDER BY year DESC';
-  
   db.all(query, (err, rows) => {
     if (err) {
       console.error('❌ Erreur lors de la récupération des voitures:', err.message);
@@ -130,103 +128,53 @@ app.get('/api/cars', (req, res) => {
   });
 });
 
-// GET /api/cars/:id - Récupérer une voiture par ID
 app.get('/api/cars/:id', (req, res) => {
   const { id } = req.params;
   const query = 'SELECT * FROM cars WHERE id = ?';
-  
   db.get(query, [id], (err, row) => {
-    if (err) {
-      console.error('❌ Erreur lors de la récupération de la voiture:', err.message);
-      return res.status(500).json({ error: 'Erreur serveur' });
-    }
-    
-    if (!row) {
-      return res.status(404).json({ error: 'Voiture non trouvée' });
-    }
-    
+    if (err) return res.status(500).json({ error: 'Erreur serveur' });
+    if (!row) return res.status(404).json({ error: 'Voiture non trouvée' });
     res.json(row);
   });
 });
 
-// POST /api/cars - Créer une voiture
 app.post('/api/cars', (req, res) => {
   const { brand, model, year, color, price, mileage, description, imageUrl, highlights } = req.body;
-  
-  // Validation basique
-  if (!brand || !model || !year) {
-    return res.status(400).json({ error: 'Veuillez fournir brand, model et year' });
-  }
-  
-  const query = `
-    INSERT INTO cars (brand, model, year, color, price, mileage, description, imageUrl, highlights)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `;
-  
+  if (!brand || !model || !year) return res.status(400).json({ error: 'Veuillez fournir brand, model et year' });
+  const query = `INSERT INTO cars (brand, model, year, color, price, mileage, description, imageUrl, highlights) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   db.run(query, [brand, model, year, color, price, mileage, description, imageUrl, highlights], function(err) {
-    if (err) {
-      console.error('❌ Erreur lors de la création de la voiture:', err.message);
-      return res.status(500).json({ error: 'Erreur serveur' });
-    }
-    
-    res.status(201).json({ id: this.lastID, brand, model, year, color, price, mileage, description, imageUrl, highlights });
+    if (err) return res.status(500).json({ error: 'Erreur serveur' });
+    res.status(201).json({ id: this.lastID, ...req.body });
   });
 });
 
-// PUT /api/cars/:id - Mettre à jour une voiture
 app.put('/api/cars/:id', (req, res) => {
   const { id } = req.params;
   const { brand, model, year, color, price, mileage, description, imageUrl, highlights } = req.body;
-  
-  const query = `
-    UPDATE cars SET brand=?, model=?, year=?, color=?, price=?, mileage=?, description=?, imageUrl=?, highlights=?
-    WHERE id=?
-  `;
-  
+  const query = `UPDATE cars SET brand=?, model=?, year=?, color=?, price=?, mileage=?, description=?, imageUrl=?, highlights=? WHERE id=?`;
   db.run(query, [brand, model, year, color, price, mileage, description, imageUrl, highlights, id], function(err) {
-    if (err) {
-      console.error('❌ Erreur lors de la mise à jour:', err.message);
-      return res.status(500).json({ error: 'Erreur serveur' });
-    }
-    
-    if (this.changes === 0) {
-      return res.status(404).json({ error: 'Voiture non trouvée' });
-    }
-    
-    res.json({ id, brand, model, year, color, price, mileage, description, imageUrl, highlights });
+    if (err) return res.status(500).json({ error: 'Erreur serveur' });
+    if (this.changes === 0) return res.status(404).json({ error: 'Voiture non trouvée' });
+    res.json({ id, ...req.body });
   });
 });
 
-// DELETE /api/cars/:id - Supprimer une voiture
 app.delete('/api/cars/:id', (req, res) => {
   const { id } = req.params;
   const query = 'DELETE FROM cars WHERE id = ?';
-  
   db.run(query, [id], function(err) {
-    if (err) {
-      console.error('❌ Erreur lors de la suppression:', err.message);
-      return res.status(500).json({ error: 'Erreur serveur' });
-    }
-    
-    if (this.changes === 0) {
-      return res.status(404).json({ error: 'Voiture non trouvée' });
-    }
-    
+    if (err) return res.status(500).json({ error: 'Erreur serveur' });
+    if (this.changes === 0) return res.status(404).json({ error: 'Voiture non trouvée' });
     res.json({ message: 'Voiture supprimée avec succès' });
   });
 });
 
-// Servir les fichiers statiques du frontend
 app.use(express.static(path.join(__dirname, 'front')));
 
-// Route par défaut
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'front', 'index.html'));
 });
 
-// Démarrer le serveur
 app.listen(PORT, () => {
   console.log(`🚗 Serveur API Cars démarré sur http://localhost:${PORT}`);
-  console.log(`📍 Frontend disponible sur http://localhost:${PORT}`);
-  console.log(`📚 API disponible sur http://localhost:${PORT}/api/cars`);
 });
